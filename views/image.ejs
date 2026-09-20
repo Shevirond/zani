@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<body>
+    <div class="container">
+        <div class="div1"></div>
+        <div class="div2">
+            <h1>Image Sorter</h1>
+            <input type="file" id="imageInput" accept="image/*">
+
+            <div id="preview"></div>
+        </div>
+        <div class="div3">
+            <div class="cutter">
+                <label>Pieces: <span id="pieceCount">4</span></label>
+                <input type="range" id="pieceSlider" min="2" max="20" value="4">
+            </div>
+            <button id="shuffleButton" class="shuffleButton">shuffle</button>
+            <div class="sort">
+                <button id="bubble">Bubble sort</button>
+                <button>insertion sort</button>
+                <button>selection sort</button>
+                <button>merge sort</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const input = document.getElementById("imageInput");
+        const preview = document.getElementById("preview");
+        const slider = document.getElementById("pieceSlider");
+        const pieceCount = document.getElementById("pieceCount");
+
+        let image = new Image();
+        let pieces = [];
+
+        input.addEventListener("change", function() {
+            const file = this.files[0];
+
+            if (!file) return;
+
+            image.onload = function () {
+                cutImage();
+            };
+
+            image.src = URL.createObjectURL(file);
+        });
+
+        function cutImage() {
+            const count = Number(slider.value);
+
+            pieceCount.textContent = count;
+            preview.innerHTML = "";
+            pieces = [];
+
+            const pieceWidth = image.naturalWidth / count;
+
+            for (let i = 0; i < count; i++) {
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+
+                canvas.width = pieceWidth;
+                canvas.height = image.naturalHeight;
+
+                ctx.drawImage(
+                    image,
+                    i * pieceWidth, 0,
+                    pieceWidth, image.naturalHeight,
+                    0, 0,
+                    pieceWidth, image.naturalHeight
+                );
+
+                pieces.push({
+                    canvas: canvas,
+                    originalIndex: i
+                });
+                preview.appendChild(canvas);
+            }
+        }
+
+        slider.addEventListener("input", cutImage);
+
+        const shuffleButton = document.getElementById("shuffleButton");
+
+        shuffleButton.addEventListener("click", function() {
+            for (let i = pieces.length -1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+
+                [pieces[i], pieces[j]] = [pieces[j], pieces[i]]
+            }
+
+            preview.innerHTML = "";
+
+            for (const piece of pieces) {
+                preview.appendChild(piece.canvas);
+            }
+        })
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function bubbleSort() {
+            if (pieces.length < 2) return;
+
+            for (let i = 0; i< pieces.length -1; i++) {
+                for (let j = 0; j < pieces.length - i - 1; j++) {
+                    if (pieces[j].originalIndex > pieces[j+1].originalIndex) {
+                        console.log("swapping", j, "with", j +1)
+
+                        let temp = pieces[j];
+                        pieces[j] = pieces[j+1];
+                        pieces[j+1] = temp;
+
+                        preview.innerHTML = "";
+                        for (const piece of pieces) {
+                            preview.appendChild(piece.canvas);
+                        }
+
+                        pieces[j].canvas.classList.add("swapped");
+                        pieces[j+1].canvas.classList.add("swapped");
+
+                        await sleep(500);
+
+                        pieces[j].canvas.classList.remove("swapped");
+                        pieces[j+1].canvas.classList.remove("swapped");
+                    }
+                }
+            }
+        }
+
+        const bubble = document.getElementById("bubble");
+        bubble.addEventListener("click", bubbleSort);
+
+        // TODO:
+        // tambah green kalo udah di posisi yang tepat
+        // tambah index juga maybe?
+    </script>
+</body>
+</html>
